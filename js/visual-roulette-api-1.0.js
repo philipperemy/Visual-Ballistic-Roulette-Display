@@ -1,8 +1,10 @@
 ﻿$(document).ready(function() {
 
 	var spinLock = false; //Unlock
-
-    setInterval(function() { // continuously check if the audio is being played
+	var scriptResponseTime = 200; // ms
+	
+	// continuously check if the audio is being played
+    var timerID = setInterval(function() { 
         if (responsiveVoice.isPlaying()) {
             console.log('playing..');
 			spinLock = true; //Lock
@@ -11,23 +13,36 @@
 			spinLock = false; //Unlock
 			callApi();
 		}
-    }, 100);
+    }, scriptResponseTime);
 
 	function callApi() {
-        //$.get("http://localhost:8080/RouletteServer/Response", function(data) {
-        $.get("http://localhost:8080/RouletteServer/Response?sessionid=1", function(data) {
+		
+		var target = "http://localhost:8080/RouletteServer/Response";
+        //TODO: remove it
+		if(Math.random() < 0.1) {
+			target = "http://localhost:8080/RouletteServer/Response?sessionid=1"
+		}
+		
+		$.get(target, function(data) {
 
             $("#outcome").html(data);
             if (data.indexOf("SESSION_NOT_READY_WHEEL_COUNT_ACTUAL") > -1) {
-                var wheelCountActual = data.split(",")[1];
-                responsiveVoice.speak("Not ready. Wheel count at " + wheelCountActual, "UK English Female");
+                /*var wheelCountActual = data.split(",")[1];
+                responsiveVoice.speak("Not ready. Wheel count at " + wheelCountActual, "UK English Female");*/
             } else {
                 responsiveVoice.speak(data, "UK English Female");
             }
 
         }).fail(function() {
-            alert("error");
+			error();
+            
         });
     }
+	
+	function error() {
+		$("#outcome").html("Critical error.");
+		clearInterval(timerID);
+		responsiveVoice.speak("Critical error.", "UK English Female");
+	}
 	
 });
